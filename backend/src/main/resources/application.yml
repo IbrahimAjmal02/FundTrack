@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: fundtrack
+  datasource:
+    url: jdbc:postgresql://localhost:5432/fundtrack
+    username: fundtrack
+    password: fundtrack
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: false
+  flyway:
+    enabled: true
+
+server:
+  port: 8080

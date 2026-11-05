@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: fundtrack-db
+    environment:
+      POSTGRES_DB: fundtrack
+      POSTGRES_USER: fundtrack
+      POSTGRES_PASSWORD: fundtrack
+    ports:
+      - "5432:5432"
+    volumes:
+      - fundtrack-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fundtrack -d fundtrack"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  fundtrack-data:
