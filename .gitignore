@@ -9,3 +9,7 @@
 .env
 *.pem
 *firebase-adminsdk*.json
+
+# AI assistant files (kept local)
+CLAUDE.md
+.mcp.json
