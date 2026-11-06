@@ -1,0 +1,51 @@
+### FundTrack API requests (VS Code REST Client)
+### Click "Send Request" above each request to run it.
+
+@baseUrl = http://localhost:8080
+
+### 1. List clients → 200 OK
+GET {{baseUrl}}/clients
+
+### 2. Create a valid client → 201 Created + Location header
+POST {{baseUrl}}/clients
+Content-Type: application/json
+
+{
+  "name": "Ali Khan",
+  "subaccountNumber": "SA-100004"
+}
+
+### 3. Duplicate subaccount number (Sarah's) → 409 Conflict
+POST {{baseUrl}}/clients
+Content-Type: application/json
+
+{
+  "name": "Someone Else",
+  "subaccountNumber": "SA-100001"
+}
+
+### 4. Blank name → 400 Bad Request (@NotBlank)
+POST {{baseUrl}}/clients
+Content-Type: application/json
+
+{
+  "name": "   ",
+  "subaccountNumber": "SA-100005"
+}
+
+### 5. Wrong subaccount format → 400 Bad Request (@Pattern)
+POST {{baseUrl}}/clients
+Content-Type: application/json
+
+{
+  "name": "Bad Format",
+  "subaccountNumber": "ABC-1"
+}
+
+### 6. Missing field → 400 Bad Request (@NotBlank catches null)
+POST {{baseUrl}}/clients
+Content-Type: application/json
+
+{
+  "name": "No Subaccount"
+}
