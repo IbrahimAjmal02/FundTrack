@@ -28,6 +28,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-flyway-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testImplementation 'org.springframework.boot:spring-boot-restclient'
 	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
 	testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
 	testImplementation 'org.testcontainers:testcontainers-postgresql'
@@ -37,4 +38,14 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	testLogging {
+		events 'passed', 'skipped', 'failed'
+	}
+	// Print a one-line summary after all tests finish, e.g. "Tests: 3 passed, 0 failed, 0 skipped (3 total)"
+	afterSuite { desc, result ->
+		if (!desc.parent) {
+			println "\nTests: ${result.successfulTestCount} passed, ${result.failedTestCount} failed, " +
+					"${result.skippedTestCount} skipped (${result.testCount} total)"
+		}
+	}
 }
