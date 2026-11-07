@@ -49,3 +49,6 @@ Content-Type: application/json
 {
   "name": "No Subaccount"
 }
+
+### 7. List funds → 200 OK (MPL100, NRT200, BND300)
+GET {{baseUrl}}/funds
