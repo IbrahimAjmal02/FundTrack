@@ -52,3 +52,57 @@ Content-Type: application/json
 
 ### 7. List funds → 200 OK (MPL100, NRT200, BND300)
 GET {{baseUrl}}/funds
+
+### 8. Create a NAV for NRT200 (fund 2) → 201 Created + Location
+POST {{baseUrl}}/funds/2/nav
+Content-Type: application/json
+
+{
+  "priceDate": "2026-11-03",
+  "nav": 24.9800
+}
+
+### 9. Same fund, same date again → 409 Conflict (run after #8)
+POST {{baseUrl}}/funds/2/nav
+Content-Type: application/json
+
+{
+  "priceDate": "2026-11-03",
+  "nav": 25.0000
+}
+
+### 10. Fund that doesn't exist → 404 Not Found
+POST {{baseUrl}}/funds/999/nav
+Content-Type: application/json
+
+{
+  "priceDate": "2026-11-03",
+  "nav": 10.0000
+}
+
+### 11. Negative NAV → 400 Bad Request (@Positive)
+POST {{baseUrl}}/funds/1/nav
+Content-Type: application/json
+
+{
+  "priceDate": "2026-11-04",
+  "nav": -5
+}
+
+### 12. Future date → 400 Bad Request (@PastOrPresent)
+POST {{baseUrl}}/funds/1/nav
+Content-Type: application/json
+
+{
+  "priceDate": "2099-01-01",
+  "nav": 12.0000
+}
+
+### 13. Too many decimal places → 400 Bad Request (@Digits fraction = 4)
+POST {{baseUrl}}/funds/1/nav
+Content-Type: application/json
+
+{
+  "priceDate": "2026-11-04",
+  "nav": 12.123456
+}
