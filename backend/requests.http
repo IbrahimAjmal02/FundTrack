@@ -127,3 +127,73 @@ GET {{baseUrl}}/funds/999/nav
 
 ### 18. Invalid date in the query → 400 (Spring can't convert "banana" to a LocalDate)
 GET {{baseUrl}}/funds/2/nav?date=banana
+
+### ───────────────────────── ORDERS ─────────────────────────
+
+### 19. Sarah BUYs $500 of MPL100 → 201 Created, status PENDING, Location /orders/{id}
+POST {{baseUrl}}/orders
+Content-Type: application/json
+
+{
+  "clientId": 1,
+  "fundId": 1,
+  "orderType": "BUY",
+  "amount": 500.00
+}
+
+### 20. Kumar SELLs 20 units of NRT200 → 201 Created, PENDING
+### (he owns nothing yet; that only matters at processing time → REJECTED later)
+POST {{baseUrl}}/orders
+Content-Type: application/json
+
+{
+  "clientId": 2,
+  "fundId": 2,
+  "orderType": "SELL",
+  "units": 20.0000
+}
+
+### 21. BUY without an amount → 400 (@AssertTrue cross-field rule)
+POST {{baseUrl}}/orders
+Content-Type: application/json
+
+{
+  "clientId": 1,
+  "fundId": 1,
+  "orderType": "BUY",
+  "units": 10
+}
+
+### 22. Invalid order type → 400 (Jackson can't map "HOLD" to OrderType)
+POST {{baseUrl}}/orders
+Content-Type: application/json
+
+{
+  "clientId": 1,
+  "fundId": 1,
+  "orderType": "HOLD",
+  "amount": 100.00
+}
+
+### 23. Unknown client → 400 (the body points at a client that doesn't exist)
+POST {{baseUrl}}/orders
+Content-Type: application/json
+
+{
+  "clientId": 999,
+  "fundId": 1,
+  "orderType": "BUY",
+  "amount": 100.00
+}
+
+### 24. All orders, oldest first → 200
+GET {{baseUrl}}/orders
+
+### 25. Only PENDING orders → 200
+GET {{baseUrl}}/orders?status=PENDING
+
+### 26. One order (use the id from #19's Location header) → 200
+GET {{baseUrl}}/orders/1
+
+### 27. Unknown order → 404
+GET {{baseUrl}}/orders/999

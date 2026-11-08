@@ -2,6 +2,7 @@ package com.ibrahim.fundtrack.order;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,6 +23,12 @@ public interface FundOrderRepository extends JpaRepository<FundOrder, Long> {
     // Postgres uses idx_fund_order_status_date (from V1) for this automatically.
     @EntityGraph(attributePaths = { "client", "fund" })
     List<FundOrder> findByStatusAndOrderDateOrderByCreatedAtAsc(OrderStatus status, LocalDate orderDate);
+
+    // GET /orders/{id}: like findById, but loads client + fund too (for OrderResponse).
+    // Spring Data ignores the words between "find" and "By", so "WithClientAndFund" is
+    // just a readable label; the query is still WHERE id = ?
+    @EntityGraph(attributePaths = { "client", "fund" })
+    Optional<FundOrder> findWithClientAndFundById(Long id);
 
     // GET /orders (no filter): every order, oldest first
     @EntityGraph(attributePaths = { "client", "fund" })
