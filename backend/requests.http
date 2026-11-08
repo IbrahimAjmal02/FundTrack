@@ -106,3 +106,18 @@ Content-Type: application/json
   "priceDate": "2026-11-04",
   "nav": 12.123456
 }
+
+### 14. NAV history for NRT200, newest first → 200 [ ... ]
+GET {{baseUrl}}/funds/2/nav
+
+### 15. NRT200's NAV on one date → 200 [ one item ] (the Location from #8)
+GET {{baseUrl}}/funds/2/nav?date=2026-11-03
+
+### 16. No NAV on that date → 200 [] (empty list, not 404)
+GET {{baseUrl}}/funds/2/nav?date=2026-10-01
+
+### 17. Unknown fund → 404
+GET {{baseUrl}}/funds/999/nav
+
+### 18. Invalid date in the query → 400 (Spring can't convert "banana" to a LocalDate)
+GET {{baseUrl}}/funds/2/nav?date=banana
