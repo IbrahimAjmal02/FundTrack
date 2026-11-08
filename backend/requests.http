@@ -234,3 +234,10 @@ POST {{baseUrl}}/orders/process?date={{$localDatetime "YYYY-MM-DD"}}
 
 ### F. SETTLED: priceUsed 12.5000, unitsSettled 40.0000 (= 500 ÷ 12.50)
 GET {{baseUrl}}/orders?status=SETTLED
+
+### G. Sarah's holdings: units per fund (settled orders only) × each fund's latest NAV → 200
+###    After the full day above: MPL100 with units > 0 and a marketValue
+GET {{baseUrl}}/clients/1/holdings
+
+### H. Unknown client → 404
+GET {{baseUrl}}/clients/999/holdings

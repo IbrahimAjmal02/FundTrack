@@ -2,6 +2,7 @@ package com.ibrahim.fundtrack.fund;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -19,4 +20,9 @@ public interface NavPriceRepository extends JpaRepository<NavPrice, Long> {
     // NAVs for a fund on one date (0 or 1 rows, thanks to UNIQUE (fund_id, price_date))
     @EntityGraph(attributePaths = "fund")
     List<NavPrice> findByFundAndPriceDate(Fund fund, LocalDate priceDate);
+
+    // Holdings: the fund's most recent NAV.
+    //   findFirst + OrderByPriceDateDesc → ORDER BY price_date DESC LIMIT 1
+    //   ByFundId → WHERE fund_id = ?  (follows the fund relationship to its id)
+    Optional<NavPrice> findFirstByFundIdOrderByPriceDateDesc(Long fundId);
 }

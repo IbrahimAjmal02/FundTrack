@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.ibrahim.fundtrack.client.Client;
 import com.ibrahim.fundtrack.fund.Fund;
+import com.ibrahim.fundtrack.holding.UnitsByFund;
 
 public interface FundOrderRepository extends JpaRepository<FundOrder, Long> {
 
@@ -56,4 +57,28 @@ public interface FundOrderRepository extends JpaRepository<FundOrder, Long> {
               AND o.status = com.ibrahim.fundtrack.order.OrderStatus.SETTLED
             """)
     BigDecimal unitsHeld(@Param("client") Client client, @Param("fund") Fund fund);
+
+    // Holdings: the same SUM as unitsHeld, but for ALL of a client's funds at once.
+    //   GROUP BY → one result row per fund (instead of one grand total)
+    //   HAVING   → like WHERE, but filters the GROUPED rows: drop funds where they now hold 0
+    //   SELECT new ...UnitsByFund(...) → JPQL builds a UnitsByFund record from each row
+    @Query("""
+            SELECT new com.ibrahim.fundtrack.holding.UnitsByFund(
+                       f.id, f.ticker, f.name,
+                       SUM(CASE WHEN o.orderType = com.ibrahim.fundtrack.order.OrderType.BUY
+                                THEN o.unitsSettled
+                                ELSE -o.unitsSettled
+                           END))
+            FROM FundOrder o
+            JOIN o.fund f
+            WHERE o.client = :client
+              AND o.status = com.ibrahim.fundtrack.order.OrderStatus.SETTLED
+            GROUP BY f.id, f.ticker, f.name
+            HAVING SUM(CASE WHEN o.orderType = com.ibrahim.fundtrack.order.OrderType.BUY
+                            THEN o.unitsSettled
+                            ELSE -o.unitsSettled
+                       END) <> 0
+            ORDER BY f.ticker
+            """)
+    List<UnitsByFund> unitsByFund(@Param("client") Client client);
 }
