@@ -197,3 +197,40 @@ GET {{baseUrl}}/orders/1
 
 ### 27. Unknown order → 404
 GET {{baseUrl}}/orders/999
+
+### ═════════════ FULL DAY: one order from placement to settlement ═════════════
+### Run steps A → F in order. Uses TODAY's date automatically ({{$localDatetime ...}}),
+### because the server stamps every order with today's date (no late trading).
+### Re-running on the same day: step D returns 409 (that NAV already exists), which is fine.
+
+### A. Morning: Sarah places a BUY for $500 of Maple (fund 1) → 201, status PENDING
+POST {{baseUrl}}/orders
+Content-Type: application/json
+
+{
+  "clientId": 1,
+  "fundId": 1,
+  "orderType": "BUY",
+  "amount": 500.00
+}
+
+### B. It's waiting: PENDING, priceUsed and unitsSettled are null
+GET {{baseUrl}}/orders?status=PENDING
+
+### C. Process BEFORE today's NAV exists → nothing settles; "stillPending" counts it
+POST {{baseUrl}}/orders/process?date={{$localDatetime "YYYY-MM-DD"}}
+
+### D. After market close: operations enters today's NAV for Maple → 201
+POST {{baseUrl}}/funds/1/nav
+Content-Type: application/json
+
+{
+  "priceDate": "{{$localDatetime "YYYY-MM-DD"}}",
+  "nav": 12.5000
+}
+
+### E. Process the day again → Sarah's order settles ("settled" ≥ 1)
+POST {{baseUrl}}/orders/process?date={{$localDatetime "YYYY-MM-DD"}}
+
+### F. SETTLED: priceUsed 12.5000, unitsSettled 40.0000 (= 500 ÷ 12.50)
+GET {{baseUrl}}/orders?status=SETTLED
