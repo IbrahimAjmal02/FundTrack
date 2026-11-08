@@ -67,6 +67,33 @@ class ClientControllerTests {
         ResponseEntity<String> listResponse = restTemplate.getForEntity("/clients", String.class);
         List<String> subaccounts = JsonPath.parse(listResponse.getBody()).read("$..subaccountNumber");
         assertThat(subaccounts).contains("SA-100004");
+
+        // Assert: the Location header is a WORKING address → GET /clients/{id} returns this client
+        ResponseEntity<String> getResponse = restTemplate.getForEntity(location, String.class);
+        assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        DocumentContext fetched = JsonPath.parse(getResponse.getBody());
+        assertThat((String) fetched.read("$.name")).isEqualTo("Ali Khan");
+        assertThat((String) fetched.read("$.subaccountNumber")).isEqualTo("SA-100004");
+    }
+
+    @Test
+    void shouldReturnClientById() {
+        // Client 1 = Sarah Chen (seeded by Flyway V2)
+        ResponseEntity<String> response = restTemplate.getForEntity("/clients/1", String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        DocumentContext json = JsonPath.parse(response.getBody());
+        Number id = json.read("$.id");
+        assertThat(id.longValue()).isEqualTo(1L);
+        assertThat((String) json.read("$.name")).isEqualTo("Sarah Chen");
+        assertThat((String) json.read("$.subaccountNumber")).isEqualTo("SA-100001");
+    }
+
+    @Test
+    void shouldReturnNotFoundForUnknownClient() {
+        ResponseEntity<String> response = restTemplate.getForEntity("/clients/999", String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test

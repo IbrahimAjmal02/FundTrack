@@ -6,6 +6,12 @@
 ### 1. List clients → 200 OK
 GET {{baseUrl}}/clients
 
+### 1b. One client by id (Sarah) → 200 OK
+GET {{baseUrl}}/clients/1
+
+### 1c. Unknown client → 404 Not Found
+GET {{baseUrl}}/clients/999
+
 ### 2. Create a valid client → 201 Created + Location header
 POST {{baseUrl}}/clients
 Content-Type: application/json

@@ -1,15 +1,18 @@
 package com.ibrahim.fundtrack.client;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import java.net.URI;
 
@@ -25,6 +28,19 @@ public class ClientController {
     @GetMapping
     public List<Client> findAll() {
         return clientRepository.findAll();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Client> findById(@PathVariable Long id) {
+        Optional<Client> maybeClient = clientRepository.findById(id);
+
+        if (maybeClient.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Client response = maybeClient.get();
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping
