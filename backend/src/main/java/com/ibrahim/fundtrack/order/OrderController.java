@@ -28,23 +28,28 @@ public class OrderController {
     private final FundOrderRepository orderRepository;
     private final ClientRepository clientRepository;
     private final FundRepository fundRepository;
+    private final OrderProcessingService orderProcessingService;
 
     public OrderController(FundOrderRepository orderRepository,
             ClientRepository clientRepository,
-            FundRepository fundRepository) {
+            FundRepository fundRepository,
+            OrderProcessingService orderProcessingService) {
         this.orderRepository = orderRepository;
         this.clientRepository = clientRepository;
         this.fundRepository = fundRepository;
+        this.orderProcessingService = orderProcessingService;
     }
 
-    // POST /orders  { "clientId": 1, "fundId": 1, "orderType": "BUY", "amount": 500.00 }
+    // POST /orders { "clientId": 1, "fundId": 1, "orderType": "BUY", "amount":
+    // 500.00 }
     @PostMapping
     public ResponseEntity<OrderResponse> placeOrder(@Valid @RequestBody PlaceOrderRequest request,
             UriComponentsBuilder ucb) {
         Optional<Client> maybeClient = clientRepository.findById(request.clientId());
         Optional<Fund> maybeFund = fundRepository.findById(request.fundId());
 
-        // The URL (/orders) exists; it's the BODY that points at something missing → 400, not 404
+        // The URL (/orders) exists; it's the BODY that points at something missing →
+        // 400, not 404
         if (maybeClient.isEmpty() || maybeFund.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
@@ -65,8 +70,8 @@ public class OrderController {
         return ResponseEntity.created(location).body(OrderResponse.from(saved));
     }
 
-    // GET /orders                  → all orders, oldest first
-    // GET /orders?status=PENDING   → only that status
+    // GET /orders → all orders, oldest first
+    // GET /orders?status=PENDING → only that status
     @GetMapping
     public List<OrderResponse> findOrders(@RequestParam(required = false) OrderStatus status) {
         List<FundOrder> orders = (status == null)
@@ -87,4 +92,10 @@ public class OrderController {
 
         return ResponseEntity.ok(OrderResponse.from(maybeOrder.get()));
     }
+
+    @PostMapping("/process")
+    public ProcessingResult process(@RequestParam LocalDate date) {
+        return orderProcessingService.processDay(date);
+    }
+
 }
