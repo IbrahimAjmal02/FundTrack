@@ -1,11 +1,17 @@
 package com.ibrahim.fundtrack.order;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import com.ibrahim.fundtrack.client.Client;
+import com.ibrahim.fundtrack.fund.Fund;
 
 public interface FundOrderRepository extends JpaRepository<FundOrder, Long> {
 
@@ -34,4 +40,20 @@ public interface FundOrderRepository extends JpaRepository<FundOrder, Long> {
     @EntityGraph(attributePaths = { "client", "fund" })
     List<FundOrder> findAllByOrderByCreatedAtAsc();
 
+    // Units a client currently owns in one fund = settled BUY units − settled SELL units.
+    // A derived name can't express SUM/CASE, so this is a hand-written JPQL query.
+    // JPQL uses ENTITY and FIELD names (FundOrder, orderType), not table/column names.
+    // COALESCE(..., 0): if there are no settled orders, SUM is null → return 0 instead.
+    @Query("""
+            SELECT COALESCE(SUM(
+                       CASE WHEN o.orderType = com.ibrahim.fundtrack.order.OrderType.BUY
+                            THEN o.unitsSettled
+                            ELSE -o.unitsSettled
+                       END), 0)
+            FROM FundOrder o
+            WHERE o.client = :client
+              AND o.fund = :fund
+              AND o.status = com.ibrahim.fundtrack.order.OrderStatus.SETTLED
+            """)
+    BigDecimal unitsHeld(@Param("client") Client client, @Param("fund") Fund fund);
 }

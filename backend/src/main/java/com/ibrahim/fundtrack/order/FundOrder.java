@@ -84,6 +84,32 @@ public class FundOrder {
         return new FundOrder(client, fund, OrderType.SELL, null, units, orderDate);
     }
 
+    // ── STATE CHANGES: the only ways an order's status can change ──
+
+    // Called by "Process day" once the order is priced.
+    //   BUY:  amount stays as entered;   unitsSettled = amount ÷ NAV
+    //   SELL: unitsSettled = units sold; amount       = units × NAV
+    public void settle(BigDecimal priceUsed, BigDecimal unitsSettled, BigDecimal amount) {
+        requirePending();
+        this.priceUsed = priceUsed;
+        this.unitsSettled = unitsSettled;
+        this.amount = amount;
+        this.status = OrderStatus.SETTLED;
+    }
+
+    // Called by "Process day" when the order can't be filled (e.g. selling more than owned).
+    public void reject() {
+        requirePending();
+        this.status = OrderStatus.REJECTED;
+    }
+
+    // Guard: a SETTLED or REJECTED order is final and can never be processed again.
+    private void requirePending() {
+        if (status != OrderStatus.PENDING) {
+            throw new IllegalStateException("Order " + id + " is " + status + ", not PENDING");
+        }
+    }
+
     public Long getId() {
         return id;
     }
