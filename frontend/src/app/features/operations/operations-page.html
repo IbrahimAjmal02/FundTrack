@@ -1,0 +1,125 @@
+<section class="page">
+  <header class="page-header">
+    <div>
+      <h1>Process day</h1>
+      <p class="subtitle">End-of-day operations for {{ today | date: 'fullDate' }}</p>
+    </div>
+  </header>
+
+  <div class="alert alert-info sample-banner">
+    Showing sample data. Wire up <code>FundService</code> and <code>OrderService</code> to run the
+    real end-of-day process.
+  </div>
+
+  <div class="grid-2">
+    <div class="stack">
+      <!-- Step 1: NAVs -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title"><span class="step">1</span> Enter today's NAVs</h2>
+          <span class="card-note">Published by each fund company after close</span>
+        </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Fund</th>
+                <th>NAV per unit (CAD)</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (f of funds(); track f.id) {
+                <tr>
+                  <td>
+                    <strong>{{ f.ticker }}</strong>
+                    <div class="muted">{{ f.name }}</div>
+                  </td>
+                  <td>
+                    <input class="input input-sm" type="number" min="0.0001" step="0.0001" placeholder="0.0000" />
+                  </td>
+                  <td class="num">
+                    <button class="btn btn-secondary btn-sm" type="button" disabled>Save</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Step 2: pending orders -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title"><span class="step">2</span> Pending orders</h2>
+          <span class="badge badge-pending">{{ pendingCount() }} waiting</span>
+        </div>
+        @if (pendingOrders().length > 0) {
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Client</th>
+                  <th>Type</th>
+                  <th>Fund</th>
+                  <th class="num">Amount / Units</th>
+                  <th>Placed</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (o of pendingOrders(); track o.id) {
+                  <tr>
+                    <td class="muted">{{ o.id }}</td>
+                    <td>{{ o.clientName }}</td>
+                    <td>
+                      <span [class]="'badge badge-' + o.orderType.toLowerCase()">{{ o.orderType }}</span>
+                    </td>
+                    <td>{{ o.ticker }}</td>
+                    <td class="num">
+                      @if (o.orderType === 'BUY') {
+                        {{ o.amount | currency: 'CAD' : 'symbol-narrow' }}
+                      } @else {
+                        {{ o.units | number: '1.4-4' }} units
+                      }
+                    </td>
+                    <td class="muted">{{ o.createdAt | date: 'shortTime' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="empty">No pending orders. Nothing to process.</p>
+        }
+      </div>
+    </div>
+
+    <!-- Step 3: process -->
+    <div class="card process-card">
+      <div class="card-header">
+        <h2 class="card-title"><span class="step">3</span> Process the day</h2>
+      </div>
+      <div class="card-body form">
+        <p class="card-note">
+          Prices every pending order at its fund's NAV for today. Orders for funds without a NAV
+          stay pending; sells for more units than the client holds are rejected.
+        </p>
+        <button class="btn btn-primary btn-block" type="button" disabled>
+          Process {{ pendingCount() }} pending order{{ pendingCount() === 1 ? '' : 's' }}
+        </button>
+
+        @if (lastResult(); as r) {
+          <div class="result">
+            <div class="result-title">Last run · {{ r.date | date: 'mediumDate' }}</div>
+            <div class="result-grid">
+              <div><span class="result-num settled">{{ r.settled }}</span>Settled</div>
+              <div><span class="result-num rejected">{{ r.rejected }}</span>Rejected</div>
+              <div><span class="result-num pending">{{ r.stillPending }}</span>Still pending</div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</section>

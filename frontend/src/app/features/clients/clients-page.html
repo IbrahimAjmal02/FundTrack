@@ -1,0 +1,74 @@
+<section class="page">
+  <header class="page-header">
+    <div>
+      <h1>Clients</h1>
+      <p class="subtitle">Brokerage clients and their subaccounts</p>
+    </div>
+    <a class="btn btn-primary" routerLink="/orders/new">Place order</a>
+  </header>
+
+  <div class="alert alert-info sample-banner">
+    Showing sample data. Wire up <code>ClientService</code> to load real clients from the API.
+  </div>
+
+  <div class="grid-2">
+    <!-- Client list -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">All clients</h2>
+        <span class="badge badge-neutral">{{ clients().length }} total</span>
+      </div>
+
+      @if (clients().length > 0) {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Subaccount</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (client of clients(); track client.id) {
+                <tr>
+                  <td>
+                    <div class="client-cell">
+                      <span class="avatar">{{ client.name.charAt(0) }}</span>
+                      <a [routerLink]="['/clients', client.id]">{{ client.name }}</a>
+                    </div>
+                  </td>
+                  <td class="mono">{{ client.subaccountNumber }}</td>
+                  <td class="num">
+                    <a class="btn btn-secondary btn-sm" [routerLink]="['/clients', client.id]">View</a>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="empty">No clients yet. Add the first one →</p>
+      }
+    </div>
+
+    <!-- Add client form (static until you wire up the form + service) -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Add client</h2>
+      </div>
+      <form class="card-body form">
+        <div class="field">
+          <label for="name">Full name</label>
+          <input id="name" class="input" type="text" placeholder="e.g. Ali Khan" />
+        </div>
+        <div class="field">
+          <label for="subaccount">Subaccount number</label>
+          <input id="subaccount" class="input mono" type="text" placeholder="SA-100004" />
+          <span class="hint">Format: SA- followed by 6 digits</span>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit" disabled>Add client</button>
+      </form>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,141 @@
+<section class="page">
+  <a class="back-link" routerLink="/clients">← All clients</a>
+
+  <header class="page-header">
+    <div>
+      <h1>{{ client().name }}</h1>
+      <p class="subtitle">
+        Subaccount <span class="mono">{{ client().subaccountNumber }}</span>
+      </p>
+    </div>
+    <a class="btn btn-primary" routerLink="/orders/new">Place order</a>
+  </header>
+
+  <div class="alert alert-info sample-banner">
+    Showing sample data. Load this client, their holdings and their orders from the API.
+  </div>
+
+  <!-- Summary tiles -->
+  <div class="stats">
+    <div class="card stat">
+      <div class="stat-label">Market value</div>
+      <div class="stat-value">{{ totalValue() | currency: 'CAD' : 'symbol-narrow' }}</div>
+    </div>
+    <div class="card stat">
+      <div class="stat-label">Funds held</div>
+      <div class="stat-value">{{ holdings().length }}</div>
+    </div>
+    <div class="card stat">
+      <div class="stat-label">Pending orders</div>
+      <div class="stat-value">{{ pendingCount() }}</div>
+    </div>
+  </div>
+
+  <div class="stack">
+    <!-- Holdings -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Holdings</h2>
+        <span class="card-note">Settled orders only · valued at each fund's latest NAV</span>
+      </div>
+      @if (holdings().length > 0) {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Fund</th>
+                <th class="num">Units</th>
+                <th class="num">Latest NAV</th>
+                <th class="num">NAV date</th>
+                <th class="num">Market value</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (h of holdings(); track h.fundId) {
+                <tr>
+                  <td>
+                    <strong>{{ h.ticker }}</strong>
+                    <div class="muted">{{ h.fundName }}</div>
+                  </td>
+                  <td class="num">{{ h.units | number: '1.4-4' }}</td>
+                  <td class="num">
+                    @if (h.nav !== null) {
+                      {{ h.nav | currency: 'CAD' : 'symbol-narrow' : '1.4-4' }}
+                    } @else {
+                      <span class="muted">—</span>
+                    }
+                  </td>
+                  <td class="num">{{ h.navDate ? (h.navDate | date: 'mediumDate') : '—' }}</td>
+                  <td class="num">
+                    <strong>{{
+                      h.marketValue !== null ? (h.marketValue | currency: 'CAD' : 'symbol-narrow') : '—'
+                    }}</strong>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="empty">No settled holdings yet.</p>
+      }
+    </div>
+
+    <!-- Order history -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Order history</h2>
+      </div>
+      @if (orders().length > 0) {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Fund</th>
+                <th class="num">Amount</th>
+                <th class="num">Units</th>
+                <th class="num">Price</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (o of orders(); track o.id) {
+                <tr>
+                  <td>{{ o.orderDate | date: 'mediumDate' }}</td>
+                  <td>
+                    <span [class]="'badge badge-' + o.orderType.toLowerCase()">{{ o.orderType }}</span>
+                  </td>
+                  <td>{{ o.ticker }}</td>
+                  <td class="num">
+                    {{ o.amount !== null ? (o.amount | currency: 'CAD' : 'symbol-narrow') : '—' }}
+                  </td>
+                  <td class="num">
+                    {{
+                      (o.unitsSettled ?? o.units) !== null
+                        ? ((o.unitsSettled ?? o.units) | number: '1.4-4')
+                        : '—'
+                    }}
+                  </td>
+                  <td class="num">
+                    {{
+                      o.priceUsed !== null
+                        ? (o.priceUsed | currency: 'CAD' : 'symbol-narrow' : '1.4-4')
+                        : '—'
+                    }}
+                  </td>
+                  <td>
+                    <span [class]="'badge badge-' + o.status.toLowerCase()">{{ o.status }}</span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="empty">No orders yet.</p>
+      }
+    </div>
+  </div>
+</section>
