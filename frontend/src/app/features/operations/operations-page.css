@@ -1,14 +1,22 @@
 .step {
-  display: inline-grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
+  display: inline-block;
+  padding: 2px 8px;
   margin-right: 8px;
-  border-radius: 50%;
+  border-radius: 999px; /* pill shape (was a circle sized for one digit) */
+  vertical-align: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   background: var(--primary-soft);
   color: var(--primary);
   font-size: 12px;
   font-weight: 700;
+}
+
+.other-dates {
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--warning-bg);
+  color: var(--warning);
 }
 
 .process-card {

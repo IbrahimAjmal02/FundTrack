@@ -2,7 +2,7 @@ import { Service, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-import { Order, OrderStatus, PlaceOrderRequest } from './models';
+import { Order, OrderStatus, PlaceOrderRequest, ProcessingResult } from './models';
 
 /** Talks to the backend's OrderController. All URLs go through the dev proxy (/api → :8080). */
 @Service()
@@ -30,5 +30,11 @@ export class OrderService {
   /** POST /orders: place a BUY or SELL (201 + the new PENDING order, or 400 if invalid). */
   placeOrder(request: PlaceOrderRequest): Observable<Order> {
     return this.http.post<Order>(this.baseUrl, request);
+  }
+
+  /** POST /orders/process?date=YYYY-MM-DD: price and settle every PENDING order for that date. */
+  processDay(date: string): Observable<ProcessingResult> {
+    const params = new HttpParams().set('date', date);
+    return this.http.post<ProcessingResult>(`${this.baseUrl}/process`, null, { params });
   }
 }

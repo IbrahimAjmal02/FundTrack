@@ -2,21 +2,32 @@
   <header class="page-header">
     <div>
       <h1>Process day</h1>
-      <p class="subtitle">End-of-day operations for {{ today | date: 'fullDate' }}</p>
+      <p class="subtitle">End-of-day operations for {{ selectedDate() | date: 'fullDate' }}</p>
+    </div>
+    <div class="field">
+      <label for="business-date">Business date</label>
+      <input
+        id="business-date"
+        class="input"
+        type="date"
+        [value]="selectedDate()"
+        [max]="maxDate"
+        (change)="onDateChange($event)"
+      />
     </div>
   </header>
 
-  <div class="alert alert-info sample-banner">
-    Showing sample data. Wire up <code>FundService</code> and <code>OrderService</code> to run the
-    real end-of-day process.
-  </div>
-
+  @if (loading()) {
+    <p class="empty">Loading…</p>
+  } @else if (loadError(); as message) {
+    <div class="alert alert-error">{{ message }}</div>
+  } @else {
   <div class="grid-2">
     <div class="stack">
       <!-- Step 1: NAVs -->
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title"><span class="step">1</span> Enter today's NAVs</h2>
+          <h2 class="card-title"><span class="step">Step 1</span> Enter NAVs</h2>
           <span class="card-note">Published by each fund company after close</span>
         </div>
         <div class="table-wrap">
@@ -35,12 +46,47 @@
                     <strong>{{ f.ticker }}</strong>
                     <div class="muted">{{ f.name }}</div>
                   </td>
-                  <td>
-                    <input class="input input-sm" type="number" min="0.0001" step="0.0001" placeholder="0.0000" />
-                  </td>
-                  <td class="num">
-                    <button class="btn btn-secondary btn-sm" type="button" disabled>Save</button>
-                  </td>
+                  @if (navsForDate()[f.id]; as saved) {
+                    <!-- Already entered for this date: NAVs are append-only, so just show it -->
+                    <td class="num">{{ saved.nav | currency: 'CAD' : 'symbol-narrow' : '1.4-4' }}</td>
+                    <td class="num"><span class="badge badge-settled">Saved</span></td>
+                  } @else {
+                    <td>
+                      <input
+                        class="input input-sm"
+                        type="number"
+                        min="0.0001"
+                        step="0.0001"
+                        placeholder="0.0000"
+                        [formControl]="navInputs[f.id]"
+                        (keydown.enter)="saveNav(f)"
+                      />
+                      @if (navInputs[f.id].touched && navInputs[f.id].errors; as errors) {
+                        <div class="error-text">
+                          @if (errors['required']) {
+                            Enter a NAV
+                          } @else if (errors['min']) {
+                            Must be greater than 0
+                          } @else if (errors['maxDecimals']) {
+                            Max 4 decimal places
+                          }
+                        </div>
+                      }
+                      @if (navErrors()[f.id]; as message) {
+                        <div class="error-text">{{ message }}</div>
+                      }
+                    </td>
+                    <td class="num">
+                      <button
+                        class="btn btn-secondary btn-sm"
+                        type="button"
+                        [disabled]="savingFundId() !== null"
+                        (click)="saveNav(f)"
+                      >
+                        {{ savingFundId() === f.id ? 'Saving…' : 'Save' }}
+                      </button>
+                    </td>
+                  }
                 </tr>
               }
             </tbody>
@@ -51,10 +97,16 @@
       <!-- Step 2: pending orders -->
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title"><span class="step">2</span> Pending orders</h2>
+          <h2 class="card-title"><span class="step">Step 2</span> Pending orders</h2>
           <span class="badge badge-pending">{{ pendingCount() }} waiting</span>
         </div>
-        @if (pendingOrders().length > 0) {
+        @if (pendingOtherDates() > 0) {
+          <p class="card-note other-dates">
+            {{ pendingOtherDates() }} pending order{{ pendingOtherDates() === 1 ? '' : 's' }} from other
+            dates. Pick that business date above to process {{ pendingOtherDates() === 1 ? 'it' : 'them' }}.
+          </p>
+        }
+        @if (pendingForDate().length > 0) {
           <div class="table-wrap">
             <table class="table">
               <thead>
@@ -68,7 +120,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (o of pendingOrders(); track o.id) {
+                @for (o of pendingForDate(); track o.id) {
                   <tr>
                     <td class="muted">{{ o.id }}</td>
                     <td>{{ o.clientName }}</td>
@@ -90,7 +142,7 @@
             </table>
           </div>
         } @else {
-          <p class="empty">No pending orders. Nothing to process.</p>
+          <p class="empty">No pending orders for this date.</p>
         }
       </div>
     </div>
@@ -98,15 +150,35 @@
     <!-- Step 3: process -->
     <div class="card process-card">
       <div class="card-header">
-        <h2 class="card-title"><span class="step">3</span> Process the day</h2>
+        <h2 class="card-title"><span class="step">Step 3</span> Process the day</h2>
       </div>
       <div class="card-body form">
         <p class="card-note">
-          Prices every pending order at its fund's NAV for today. Orders for funds without a NAV
+          Prices every pending order at its fund's NAV for this date. Orders for funds without a NAV
           stay pending; sells for more units than the client holds are rejected.
         </p>
-        <button class="btn btn-primary btn-block" type="button" disabled>
-          Process {{ pendingCount() }} pending order{{ pendingCount() === 1 ? '' : 's' }}
+        @if (pendingCount() > 0 && fundsMissingNav().length > 0) {
+          <div class="alert alert-info">
+            No NAV yet for
+            @for (f of fundsMissingNav(); track f.id; let last = $last) {
+              <strong>{{ f.ticker }}</strong>{{ last ? '' : ', ' }}
+            }. Orders in {{ fundsMissingNav().length === 1 ? 'that fund' : 'those funds' }} will stay pending.
+          </div>
+        }
+        @if (processError(); as message) {
+          <div class="alert alert-error">{{ message }}</div>
+        }
+        <button
+          class="btn btn-primary btn-block"
+          type="button"
+          [disabled]="processing() || pendingCount() === 0"
+          (click)="processDay()"
+        >
+          @if (processing()) {
+            Processing…
+          } @else {
+            Process {{ pendingCount() }} pending order{{ pendingCount() === 1 ? '' : 's' }}
+          }
         </button>
 
         @if (lastResult(); as r) {
@@ -122,4 +194,5 @@
       </div>
     </div>
   </div>
+  }
 </section>
