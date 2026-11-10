@@ -7,9 +7,9 @@
     <a class="btn btn-primary" routerLink="/orders/new">Place order</a>
   </header>
 
-  <div class="alert alert-info sample-banner">
-    Showing sample data. Wire up <code>ClientService</code> to load real clients from the API.
-  </div>
+  @if (error(); as message) {
+    <div class="alert alert-error sample-banner">{{ message }}</div>
+  }
 
   <div class="grid-2">
     <!-- Client list -->
@@ -19,7 +19,9 @@
         <span class="badge badge-neutral">{{ clients().length }} total</span>
       </div>
 
-      @if (clients().length > 0) {
+      @if (loading()) {
+        <p class="empty">Loading clients…</p>
+      } @else if (clients().length > 0) {
         <div class="table-wrap">
           <table class="table">
             <thead>
@@ -52,22 +54,42 @@
       }
     </div>
 
-    <!-- Add client form (static until you wire up the form + service) -->
+    <!-- Add client form → ClientService.createClient() → POST /api/clients -->
     <div class="card">
       <div class="card-header">
         <h2 class="card-title">Add client</h2>
       </div>
-      <form class="card-body form">
+      <form class="card-body form" [formGroup]="form" (ngSubmit)="addClient()">
         <div class="field">
           <label for="name">Full name</label>
-          <input id="name" class="input" type="text" placeholder="e.g. Ali Khan" />
+          <input id="name" class="input" type="text" placeholder="e.g. Ali Khan" formControlName="name" />
+          @if (form.controls.name.touched && form.controls.name.errors; as errors) {
+            @if (errors['required']) {
+              <span class="error-text">Name is required</span>
+            } @else if (errors['maxlength']) {
+              <span class="error-text">Name must be 100 characters or fewer</span>
+            }
+          }
         </div>
         <div class="field">
           <label for="subaccount">Subaccount number</label>
-          <input id="subaccount" class="input mono" type="text" placeholder="SA-100004" />
-          <span class="hint">Format: SA- followed by 6 digits</span>
+          <input id="subaccount" class="input mono" type="text" placeholder="SA-100004" formControlName="subaccountNumber" />
+          @if (form.controls.subaccountNumber.touched && form.controls.subaccountNumber.errors; as errors) {
+            @if (errors['required']) {
+              <span class="error-text">Subaccount number is required</span>
+            } @else if (errors['pattern']) {
+              <span class="error-text">Format must be SA- followed by 6 digits</span>
+            }
+          } @else {
+            <span class="hint">Format: SA- followed by 6 digits</span>
+          }
         </div>
-        <button class="btn btn-primary btn-block" type="submit" disabled>Add client</button>
+        @if (saveError(); as message) {
+          <div class="alert alert-error">{{ message }}</div>
+        }
+        <button class="btn btn-primary btn-block" type="submit" [disabled]="saving()">
+          {{ saving() ? 'Adding…' : 'Add client' }}
+        </button>
       </form>
     </div>
   </div>
