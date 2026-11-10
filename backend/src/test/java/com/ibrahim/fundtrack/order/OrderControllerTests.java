@@ -150,6 +150,36 @@ class OrderControllerTests {
     }
 
     @Test
+    void shouldListOnlyOneClientsOrders() {
+        // One order for Kumar (client 2), one for Maria (client 3).
+        // Fund 3 has no NAV today, so these stay PENDING and can't affect the Process-day tests.
+        PlaceOrderRequest kumars = new PlaceOrderRequest(2L, 3L, OrderType.BUY, new BigDecimal("60.00"), null);
+        PlaceOrderRequest marias = new PlaceOrderRequest(3L, 3L, OrderType.BUY, new BigDecimal("70.00"), null);
+        Number kumarOrderId = JsonPath.parse(restTemplate.postForEntity("/orders", kumars, String.class).getBody())
+                .read("$.id");
+        Number mariaOrderId = JsonPath.parse(restTemplate.postForEntity("/orders", marias, String.class).getBody())
+                .read("$.id");
+
+        ResponseEntity<String> response = restTemplate.getForEntity("/orders?clientId=2", String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        DocumentContext json = JsonPath.parse(response.getBody());
+        List<Number> clientIds = json.read("$[*].clientId");
+        List<Number> ids = json.read("$[*].id");
+        assertThat(clientIds).isNotEmpty().allMatch(c -> c.longValue() == 2L); // only Kumar's
+        assertThat(ids).anyMatch(i -> i.longValue() == kumarOrderId.longValue());
+        assertThat(ids).noneMatch(i -> i.longValue() == mariaOrderId.longValue());
+    }
+
+    @Test
+    void shouldReturnEmptyListForClientWithNoOrders() {
+        ResponseEntity<String> response = restTemplate.getForEntity("/orders?clientId=999999", String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(JsonPath.parse(response.getBody()).read("$.length()", Integer.class)).isZero();
+    }
+
+    @Test
     void shouldRejectInvalidStatusFilter() {
         ResponseEntity<String> response = restTemplate.getForEntity("/orders?status=BANANA", String.class);
 

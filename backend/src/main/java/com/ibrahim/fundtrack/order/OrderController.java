@@ -70,13 +70,23 @@ public class OrderController {
         return ResponseEntity.created(location).body(OrderResponse.from(saved));
     }
 
-    // GET /orders → all orders, oldest first
-    // GET /orders?status=PENDING → only that status
+    // GET /orders                       → all orders, oldest first
+    // GET /orders?status=PENDING          → only that status
+    // GET /orders?clientId=3              → one client's orders (filtered in the DB, not the browser)
+    // GET /orders?clientId=3&status=...   → both
     @GetMapping
-    public List<OrderResponse> findOrders(@RequestParam(required = false) OrderStatus status) {
-        List<FundOrder> orders = (status == null)
-                ? orderRepository.findAllByOrderByCreatedAtAsc()
-                : orderRepository.findByStatusOrderByCreatedAtAsc(status);
+    public List<OrderResponse> findOrders(@RequestParam(required = false) OrderStatus status,
+            @RequestParam(required = false) Long clientId) {
+        List<FundOrder> orders;
+        if (clientId != null && status != null) {
+            orders = orderRepository.findByClientIdAndStatusOrderByCreatedAtAsc(clientId, status);
+        } else if (clientId != null) {
+            orders = orderRepository.findByClientIdOrderByCreatedAtAsc(clientId);
+        } else if (status != null) {
+            orders = orderRepository.findByStatusOrderByCreatedAtAsc(status);
+        } else {
+            orders = orderRepository.findAllByOrderByCreatedAtAsc();
+        }
 
         return orders.stream().map(OrderResponse::from).toList();
     }

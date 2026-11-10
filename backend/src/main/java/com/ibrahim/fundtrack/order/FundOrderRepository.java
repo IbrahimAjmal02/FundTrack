@@ -41,6 +41,15 @@ public interface FundOrderRepository extends JpaRepository<FundOrder, Long> {
     @EntityGraph(attributePaths = { "client", "fund" })
     List<FundOrder> findAllByOrderByCreatedAtAsc();
 
+    // GET /orders?clientId=3 → one client's order history (client detail page)
+    // "ClientId" walks the relation: client.id → WHERE client_id = ? (uses idx on client_id from V1)
+    @EntityGraph(attributePaths = { "client", "fund" })
+    List<FundOrder> findByClientIdOrderByCreatedAtAsc(Long clientId);
+
+    // GET /orders?clientId=3&status=PENDING → both filters
+    @EntityGraph(attributePaths = { "client", "fund" })
+    List<FundOrder> findByClientIdAndStatusOrderByCreatedAtAsc(Long clientId, OrderStatus status);
+
     // Units a client currently owns in one fund = settled BUY units − settled SELL units.
     // A derived name can't express SUM/CASE, so this is a hand-written JPQL query.
     // JPQL uses ENTITY and FIELD names (FundOrder, orderType), not table/column names.
