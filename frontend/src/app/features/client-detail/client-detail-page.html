@@ -1,19 +1,25 @@
 <section class="page">
   <a class="back-link" routerLink="/clients">← All clients</a>
 
+  @if (loading()) {
+    <p class="empty">Loading client…</p>
+  } @else if (notFound()) {
+    <div class="card">
+      <p class="empty">Client #{{ id() }} doesn't exist. <a routerLink="/clients">Back to all clients</a></p>
+    </div>
+  } @else if (error(); as message) {
+    <div class="alert alert-error">{{ message }}</div>
+  } @else if (client(); as c) {
+
   <header class="page-header">
     <div>
-      <h1>{{ client().name }}</h1>
+      <h1>{{ c.name }}</h1>
       <p class="subtitle">
-        Subaccount <span class="mono">{{ client().subaccountNumber }}</span>
+        Subaccount <span class="mono">{{ c.subaccountNumber }}</span>
       </p>
     </div>
     <a class="btn btn-primary" routerLink="/orders/new">Place order</a>
   </header>
-
-  <div class="alert alert-info sample-banner">
-    Showing sample data. Load this client, their holdings and their orders from the API.
-  </div>
 
   <!-- Summary tiles -->
   <div class="stats">
@@ -138,4 +144,5 @@
       }
     </div>
   </div>
+  }
 </section>
