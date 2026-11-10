@@ -1,10 +1,13 @@
 spring:
   application:
     name: fundtrack
+  # ${NAME:default} → use the environment variable NAME if set, else the default.
+  # Defaults = local dev (Docker Postgres on localhost). Deployments (Render) set the real
+  # values as env vars, so real credentials never live in this file or in git.
   datasource:
-    url: jdbc:postgresql://localhost:5432/fundtrack
-    username: fundtrack
-    password: fundtrack
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/fundtrack}
+    username: ${DB_USERNAME:fundtrack}
+    password: ${DB_PASSWORD:fundtrack}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -17,4 +20,4 @@ spring:
     enabled: true
 
 server:
-  port: 8080
+  port: ${PORT:8080} # hosting platforms (Render) tell the app which port to use via PORT

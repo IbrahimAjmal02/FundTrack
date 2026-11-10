@@ -1,0 +1,12 @@
+# Keep the Docker build context small and free of local junk.
+# (Like .gitignore, but for what gets sent to Docker when it builds the image.)
+build/
+.gradle/
+bin/
+out/
+.idea/
+.vscode/
+*.iml
+HELP.md
+requests.http
+.env
