@@ -2,7 +2,7 @@ import { Service, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-import { Order, OrderStatus } from './models';
+import { Order, OrderStatus, PlaceOrderRequest } from './models';
 
 /** Talks to the backend's OrderController. All URLs go through the dev proxy (/api → :8080). */
 @Service()
@@ -25,5 +25,10 @@ export class OrderService {
       params = params.set('status', filters.status);
     }
     return this.http.get<Order[]>(this.baseUrl, { params });
+  }
+
+  /** POST /orders: place a BUY or SELL (201 + the new PENDING order, or 400 if invalid). */
+  placeOrder(request: PlaceOrderRequest): Observable<Order> {
+    return this.http.post<Order>(this.baseUrl, request);
   }
 }

@@ -6,15 +6,34 @@
     </div>
   </header>
 
+  @if (loadError(); as message) {
+    <!-- Without clients and funds the form is useless, so show only the error -->
+    <div class="alert alert-error">{{ message }}</div>
+  } @else {
   <div class="grid-2">
-    <!-- Order form (static until you wire up the form + OrderService) -->
+    <!-- Order form → OrderService.placeOrder() → POST /api/orders -->
     <div class="card">
       <div class="card-header">
         <h2 class="card-title">New order</h2>
         <span class="badge badge-pending">Will be PENDING</span>
       </div>
 
-      <form class="card-body form">
+      <form class="card-body form" [formGroup]="form" (ngSubmit)="submit()">
+        @if (placedOrder(); as o) {
+          <div class="alert alert-success">
+            <strong>Order #{{ o.id }} placed</strong> for {{ o.clientName }}:
+            {{ o.orderType }}
+            @if (o.orderType === 'BUY') {
+              {{ o.amount | currency: 'CAD' : 'symbol-narrow' }}
+            } @else {
+              {{ o.units | number: '1.4-4' }} units
+            }
+            of {{ o.ticker }}, dated {{ o.orderDate | date: 'mediumDate' }}.
+            It stays PENDING until operations processes the day.
+            <a [routerLink]="['/clients', o.clientId]">View {{ o.clientName }} →</a>
+          </div>
+        }
+
         <div class="field">
           <label>Order type</label>
           <div class="segmented" role="group" aria-label="Order type">
@@ -29,40 +48,69 @@
 
         <div class="field">
           <label for="client">Client</label>
-          <select id="client" class="select">
-            <option value="" disabled selected>Select a client…</option>
+          <select id="client" class="select" formControlName="clientId">
+            <option [ngValue]="null" disabled>Select a client…</option>
             @for (c of clients(); track c.id) {
-              <option [value]="c.id">{{ c.name }} · {{ c.subaccountNumber }}</option>
+              <option [ngValue]="c.id">{{ c.name }} · {{ c.subaccountNumber }}</option>
             }
           </select>
+          @if (form.controls.clientId.touched && form.controls.clientId.invalid) {
+            <span class="error-text">Choose a client</span>
+          }
         </div>
 
         <div class="field">
           <label for="fund">Fund</label>
-          <select id="fund" class="select">
-            <option value="" disabled selected>Select a fund…</option>
+          <select id="fund" class="select" formControlName="fundId">
+            <option [ngValue]="null" disabled>Select a fund…</option>
             @for (f of funds(); track f.id) {
-              <option [value]="f.id">{{ f.ticker }} · {{ f.name }}</option>
+              <option [ngValue]="f.id">{{ f.ticker }} · {{ f.name }}</option>
             }
           </select>
+          @if (form.controls.fundId.touched && form.controls.fundId.invalid) {
+            <span class="error-text">Choose a fund</span>
+          }
         </div>
 
         @if (orderType() === 'BUY') {
           <div class="field">
             <label for="amount">Amount (CAD)</label>
-            <input id="amount" class="input" type="number" min="0.01" step="0.01" placeholder="500.00" />
-            <span class="hint">Units are calculated at settlement: amount ÷ NAV</span>
+            <input id="amount" class="input" type="number" min="0.01" step="0.01" placeholder="500.00" formControlName="amount" />
+            @if (form.controls.amount.touched && form.controls.amount.errors; as errors) {
+              @if (errors['required']) {
+                <span class="error-text">Enter an amount</span>
+              } @else if (errors['min']) {
+                <span class="error-text">Amount must be at least $0.01</span>
+              } @else if (errors['maxDecimals']) {
+                <span class="error-text">Max 2 decimal places (cents)</span>
+              }
+            } @else {
+              <span class="hint">Units are calculated at settlement: amount ÷ NAV</span>
+            }
           </div>
         } @else {
           <div class="field">
             <label for="units">Units to sell</label>
-            <input id="units" class="input" type="number" min="0.0001" step="0.0001" placeholder="20.0000" />
-            <span class="hint">Proceeds are calculated at settlement: units × NAV</span>
+            <input id="units" class="input" type="number" min="0.0001" step="0.0001" placeholder="20.0000" formControlName="units" />
+            @if (form.controls.units.touched && form.controls.units.errors; as errors) {
+              @if (errors['required']) {
+                <span class="error-text">Enter the number of units</span>
+              } @else if (errors['min']) {
+                <span class="error-text">Units must be at least 0.0001</span>
+              } @else if (errors['maxDecimals']) {
+                <span class="error-text">Max 4 decimal places</span>
+              }
+            } @else {
+              <span class="hint">Proceeds are calculated at settlement: units × NAV</span>
+            }
           </div>
         }
 
-        <button class="btn btn-primary btn-block" type="submit" disabled>
-          Place {{ orderType() === 'BUY' ? 'buy' : 'sell' }} order
+        @if (submitError(); as message) {
+          <div class="alert alert-error">{{ message }}</div>
+        }
+        <button class="btn btn-primary btn-block" type="submit" [disabled]="submitting()">
+          {{ submitting() ? 'Placing…' : 'Place ' + (orderType() === 'BUY' ? 'buy' : 'sell') + ' order' }}
         </button>
       </form>
     </div>
@@ -89,4 +137,5 @@
       </div>
     </div>
   </div>
+  }
 </section>
